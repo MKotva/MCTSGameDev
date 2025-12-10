@@ -66,10 +66,83 @@
 
         void SearchMoves()
         {
-            // TODO
-            // Don't forget to end the search once the abortSearch parameter gets set to true.
+            // ROOT
+            var rootBoard = board.Clone();
+            var root = new MCTSNode(rootBoard, rootBoard.WhiteToMove ? 0 : 1);
 
-            throw new NotImplementedException();
+            // For this task, only one iteration (I hope it is OK)
+            if (!abortSearch)
+            {
+                var selected = SelectNode(root);
+                var expanded = ExpandNode(selected);
+            }
+
+            // TODO: Redo in next assignment
+            var legalMoves = moveGenerator.GenerateMoves(board, true, true);
+            if (legalMoves.Count > 0)
+                bestMove = legalMoves[0];
+        }
+
+        MCTSNode SelectNode(MCTSNode root)
+        {
+            var c = 1.0;
+            MCTSNode node = root;
+            while (!node.IsLeaf)
+            {
+                List<MCTSNode> unused = null;
+                foreach (var child in node.Offsprings)
+                {
+                    if (child.UseCounter == 0)
+                    {
+                        if (unused == null)
+                            unused = new List<MCTSNode>();
+
+                        unused.Add(child);
+                    }
+                }
+
+                if (unused != null && unused.Count > 0)
+                {
+                    node = unused[rand.Next(unused.Count)];
+                    continue;
+                }
+
+                MCTSNode bestChild = null;
+                var bestVal = double.NegativeInfinity;
+                var parentUsages = node.UseCounter > 0 ? node.UseCounter : 1.0;
+                foreach (var child in node.Offsprings)
+                {
+                    var ucb = child.Reward / child.UseCounter + c * Sqrt(Log(parentUsages) / child.UseCounter);
+                    if (ucb > bestVal)
+                    {
+                        bestVal = ucb;
+                        bestChild = child;
+                    }
+                }
+
+                if (bestChild == null)
+                    break;
+                node = bestChild;
+            }
+            return node;
+        }
+
+        MCTSNode ExpandNode(MCTSNode node)
+        {
+            var moves = moveGenerator.GenerateMoves(node.State, true, true); // Expand state (generate all moves)
+            if (moves.Count == 0)
+                return node; // No legal moves
+
+            int moveIdx = moves.Count - 1 - node.Offsprings.Count;
+            if (moveIdx < 0)
+                return node; // All moves expanded
+
+            Move toExpand = moves[moveIdx];
+
+            Board nBoard = node.State.Clone();
+            nBoard.MakeMove(toExpand, true);
+
+            return new MCTSNode(node, nBoard, toExpand, nBoard.WhiteToMove ? 0 : 1);
         }
 
         void LogDebugInfo()
