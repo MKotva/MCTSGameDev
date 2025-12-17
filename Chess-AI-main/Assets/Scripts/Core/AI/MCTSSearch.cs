@@ -75,6 +75,7 @@
             {
                 var selected = SelectNode(root);
                 var expanded = ExpandNode(selected);
+                double reward = Simulate(expanded);
             }
 
             // TODO: Redo in next assignment
@@ -143,6 +144,44 @@
             nBoard.MakeMove(toExpand, true);
 
             return new MCTSNode(node, nBoard, toExpand, nBoard.WhiteToMove ? 0 : 1);
+        }
+
+        double Simulate(MCTSNode node)
+        {     
+            var simBoard = node.State.GetLightweightClone();
+            int currentPlayerId = node.PlayerID;
+            int opponentId = currentPlayerId == 1 ? 0 : 1;
+
+            int steps = 0;
+            int maxSteps = settings.playoutDepthLimit;
+            while (steps < maxSteps && !abortSearch)
+            {
+                var terminalInfo = CheckTerminal(simBoard);
+                if (terminalInfo.isTerminal)
+                {
+                    if (terminalInfo.winnerPlayerId == currentPlayerId)
+                    {
+                        return 1.0; //Based on the given instr.
+                    }
+                    if (terminalInfo.winnerPlayerId == opponentId)
+                    {
+                        return 0.0;
+                    }
+                    break;
+                }
+
+                steps++;
+                break; // stop after one step
+            }
+
+            return evaluation.EvaluateSimBoard(simBoard, currentPlayerId == 1 ? true : false);
+        }
+
+        (bool isTerminal, int winnerPlayerId) CheckTerminal(object simBoard)
+        {
+
+            //TODO: This is just a prep for full sim. 
+            return (false, -1);
         }
 
         void LogDebugInfo()
