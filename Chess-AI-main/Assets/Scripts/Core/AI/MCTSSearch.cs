@@ -74,8 +74,9 @@
             if (!abortSearch)
             {
                 var selected = SelectNode(root);
-                var expanded = ExpandNode(selected);
+                var expanded = ExpandNode(selected, true);
                 double reward = Simulate(expanded);
+                Backpropagate(expanded, reward);
             }
 
             // TODO: Redo in next assignment
@@ -128,9 +129,9 @@
             return node;
         }
 
-        MCTSNode ExpandNode(MCTSNode node)
+        MCTSNode ExpandNode(MCTSNode node, bool root)
         {
-            var moves = moveGenerator.GenerateMoves(node.State, true, true); // Expand state (generate all moves)
+            var moves = moveGenerator.GenerateMoves(node.State, true, root); // Expand state (generate all moves)
             if (moves.Count == 0)
                 return node; // No legal moves
 
@@ -175,6 +176,16 @@
             }
 
             return evaluation.EvaluateSimBoard(simBoard, currentPlayerId == 1 ? true : false);
+        }
+
+        void Backpropagate(MCTSNode node, double reward)
+        {
+            MCTSNode curr = node;
+            while (curr != null)
+            {
+                curr.Update(reward);
+                curr = curr.Parent;
+            }
         }
 
         (bool isTerminal, int winnerPlayerId) CheckTerminal(object simBoard)

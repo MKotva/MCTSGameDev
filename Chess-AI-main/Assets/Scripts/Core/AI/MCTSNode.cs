@@ -57,5 +57,10 @@
             UseCounter++;
             Reward += reward;
         }
+
+        //public double GetAverageReward()
+        //{ 
+        //    return UseCounter > 0 ? Reward / UseCounter : 0.0; 
+        //}
     }
 }
